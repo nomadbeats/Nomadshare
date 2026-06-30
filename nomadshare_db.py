@@ -1,34 +1,27 @@
-# NomadShare - Supabase Database Module
-# Database operations for Supabase
-
-import os
-from supabase import create_client, Client
-from datetime import datetime, timedelta
-import uuid
 import logging
+import uuid
+from datetime import datetime, timedelta
+from typing import Optional, List, Dict
 
 logger = logging.getLogger(__name__)
 
 class NomadShareDB:
-    """
-    Supabase database handler for NomadShare bot
-    """
+    """Supabase database handler"""
     
     def __init__(self, supabase_url: str, supabase_key: str):
         """Initialize Supabase client"""
         try:
-            self.client: Client = create_client(supabase_url, supabase_key)
-            self.url = supabase_url
-            self.key = supabase_key
-            logger.info("✅ Supabase connected successfully")
+            from supabase import create_client
+            self.client = create_client(supabase_url, supabase_key)
+            logger.info("✅ Database connected")
+        except ImportError:
+            raise ImportError("Supabase not installed!")
         except Exception as e:
-            logger.error(f"❌ Supabase connection failed: {e}")
+            logger.error(f"❌ Database connection failed: {e}")
             raise
 
-    # ============ FILE OPERATIONS ============
-    
-    async def save_file(self, file_data: dict) -> dict:
-        """Save file metadata to database"""
+    async def save_file(self, file_data: Dict) -> Optional[Dict]:
+        """Save file metadata"""
         try:
             file_id = str(uuid.uuid4())
             data = {
@@ -46,14 +39,16 @@ class NomadShareDB:
             }
             
             response = self.client.table('files').insert(data).execute()
-            logger.info(f"✅ File saved: {file_data.get('file_name')}")
-            return response.data[0] if response.data else data
+            if response.data:
+                logger.info(f"✅ File saved: {file_data.get('file_name')}")
+                return response.data[0]
+            return data
         except Exception as e:
             logger.error(f"❌ Error saving file: {e}")
-            raise
+            return None
 
-    async def get_file(self, file_id: str) -> dict:
-        """Get file metadata"""
+    async def get_file(self, file_id: str) -> Optional[Dict]:
+        """Get file by ID"""
         try:
             response = self.client.table('files').select('*').eq('id', file_id).execute()
             if response.data:
@@ -63,19 +58,8 @@ class NomadShareDB:
             logger.error(f"❌ Error getting file: {e}")
             return None
 
-    async def get_file_by_telegram_id(self, telegram_file_id: str) -> dict:
-        """Get file by Telegram file_id"""
-        try:
-            response = self.client.table('files').select('*').eq('file_id', telegram_file_id).execute()
-            if response.data:
-                return response.data[0]
-            return None
-        except Exception as e:
-            logger.error(f"❌ Error getting file: {e}")
-            return None
-
     async def delete_file(self, file_id: str) -> bool:
-        """Delete file metadata"""
+        """Delete file"""
         try:
             self.client.table('files').delete().eq('id', file_id).execute()
             logger.info(f"✅ File deleted: {file_id}")
@@ -85,7 +69,7 @@ class NomadShareDB:
             return False
 
     async def increment_access_count(self, file_id: str) -> bool:
-        """Increment file access count"""
+        """Increment access count"""
         try:
             file_data = await self.get_file(file_id)
             if file_data:
@@ -97,9 +81,7 @@ class NomadShareDB:
             logger.error(f"❌ Error incrementing access: {e}")
             return False
 
-    # ============ USER OPERATIONS ============
-    
-    async def add_user(self, user_data: dict) -> dict:
+    async def add_user(self, user_data: Dict) -> Optional[Dict]:
         """Add new user"""
         try:
             data = {
@@ -113,14 +95,16 @@ class NomadShareDB:
             }
             
             response = self.client.table('users').insert(data).execute()
-            logger.info(f"✅ User added: {user_data.get('username')}")
-            return response.data[0] if response.data else data
+            if response.data:
+                logger.info(f"✅ User added: {user_data.get('username')}")
+                return response.data[0]
+            return data
         except Exception as e:
             logger.error(f"❌ Error adding user: {e}")
-            raise
+            return None
 
-    async def get_user(self, user_id: int) -> dict:
-        """Get user data"""
+    async def get_user(self, user_id: int) -> Optional[Dict]:
+        """Get user by ID"""
         try:
             response = self.client.table('users').select('*').eq('user_id', user_id).execute()
             if response.data:
@@ -130,8 +114,8 @@ class NomadShareDB:
             logger.error(f"❌ Error getting user: {e}")
             return None
 
-    async def update_user(self, user_id: int, update_data: dict) -> bool:
-        """Update user data"""
+    async def update_user(self, user_id: int, update_data: Dict) -> bool:
+        """Update user"""
         try:
             self.client.table('users').update(update_data).eq('user_id', user_id).execute()
             logger.info(f"✅ User updated: {user_id}")
@@ -140,7 +124,7 @@ class NomadShareDB:
             logger.error(f"❌ Error updating user: {e}")
             return False
 
-    async def get_all_users(self) -> list:
+    async def get_all_users(self) -> List[Dict]:
         """Get all users"""
         try:
             response = self.client.table('users').select('*').execute()
@@ -149,10 +133,8 @@ class NomadShareDB:
             logger.error(f"❌ Error getting users: {e}")
             return []
 
-    # ============ LINK OPERATIONS ============
-    
-    async def save_link(self, file_id: str, short_url: str, short_code: str) -> dict:
-        """Save generated link"""
+    async def save_link(self, file_id: str, short_url: str, short_code: str) -> Optional[Dict]:
+        """Save link"""
         try:
             data = {
                 'id': str(uuid.uuid4()),
@@ -165,18 +147,18 @@ class NomadShareDB:
             }
             
             response = self.client.table('links').insert(data).execute()
-            
-            # Update file with short_url
             self.client.table('files').update({'short_url': short_url}).eq('id', file_id).execute()
             
-            logger.info(f"✅ Link saved for file: {file_id}")
-            return response.data[0] if response.data else data
+            logger.info(f"✅ Link saved: {file_id}")
+            if response.data:
+                return response.data[0]
+            return data
         except Exception as e:
             logger.error(f"❌ Error saving link: {e}")
-            raise
+            return None
 
-    async def get_link(self, short_code: str) -> dict:
-        """Get link by short code"""
+    async def get_link(self, short_code: str) -> Optional[Dict]:
+        """Get link by code"""
         try:
             response = self.client.table('links').select('*').eq('short_code', short_code).execute()
             if response.data:
@@ -186,26 +168,8 @@ class NomadShareDB:
             logger.error(f"❌ Error getting link: {e}")
             return None
 
-    async def get_user_links(self, user_id: int) -> list:
-        """Get all links created by user"""
-        try:
-            response = self.client.table('links').select('*,files(uploaded_by)').eq('files.uploaded_by', user_id).execute()
-            return response.data if response.data else []
-        except Exception as e:
-            logger.error(f"❌ Error getting user links: {e}")
-            return []
-
-    # ============ UTILITY OPERATIONS ============
-    
-    def _calculate_expiry(self, auto_delete_seconds: int) -> str:
-        """Calculate expiry date"""
-        if auto_delete_seconds:
-            expiry_date = datetime.now() + timedelta(seconds=auto_delete_seconds)
-            return expiry_date.isoformat()
-        return None
-
-    async def get_stats(self) -> dict:
-        """Get database statistics"""
+    async def get_stats(self) -> Dict:
+        """Get statistics"""
         try:
             files = self.client.table('files').select('count', count='exact').execute()
             users = self.client.table('users').select('count', count='exact').execute()
@@ -229,18 +193,28 @@ class NomadShareDB:
                 .execute()
             
             deleted_count = 0
-            for file in expired_files.data:
+            for file in expired_files.data if expired_files.data else []:
                 await self.delete_file(file['id'])
                 deleted_count += 1
             
-            logger.info(f"✅ Cleaned up {deleted_count} expired files")
+            if deleted_count > 0:
+                logger.info(f"✅ Cleaned up {deleted_count} expired files")
+            
             return deleted_count
         except Exception as e:
-            logger.error(f"❌ Error cleaning up files: {e}")
+            logger.error(f"❌ Error cleaning up: {e}")
             return 0
 
-    async def get_user_files(self, user_id: int) -> list:
-        """Get all files uploaded by user"""
+    @staticmethod
+    def _calculate_expiry(auto_delete_seconds: int) -> Optional[str]:
+        """Calculate expiry date"""
+        if auto_delete_seconds and auto_delete_seconds > 0:
+            expiry_date = datetime.now() + timedelta(seconds=auto_delete_seconds)
+            return expiry_date.isoformat()
+        return None
+
+    async def get_user_files(self, user_id: int) -> List[Dict]:
+        """Get user files"""
         try:
             response = self.client.table('files').select('*').eq('uploaded_by', user_id).execute()
             return response.data if response.data else []
