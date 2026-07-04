@@ -1,6 +1,5 @@
-pyrofork==2.3.45
-Tgcrypto==1.2.5
+fastapi
+python-telegram-bot
 supabase==2.0.2
-python-dotenv==1.0.0
-aiohttp==3.8.5
-requests==2.31.0
+requests
+python-dotenv==0.21.1
