@@ -32,6 +32,8 @@ async def link_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Reply to a file with /link to generate a share link.")
             return
 
+        text_content = None
+
         if replied.document:
             f = replied.document
             file_name, file_size, mime_type, file_id, category = (
@@ -52,8 +54,17 @@ async def link_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             file_name, file_size, mime_type, file_id, category = (
                 f.file_name or f"audio_{f.file_unique_id}.mp3", f.file_size, f.mime_type or "audio/mpeg", f.file_id, "audio",
             )
+        elif replied.text:
+            text_content = replied.text
+            stripped = text_content.strip()
+            preview = stripped.splitlines()[0][:40] if stripped else "Text message"
+            file_name = f"{preview}..." if len(stripped) > 40 else (preview or "Text message")
+            file_size = len(text_content.encode("utf-8"))
+            mime_type = "text/plain"
+            file_id = None
+            category = "text"
         else:
-            await update.message.reply_text("That file type isn't supported yet — try a document, photo, video, or audio file.")
+            await update.message.reply_text("That message type isn't supported yet — try a document, photo, video, audio file, or plain text.")
             return
 
         status_msg = await update.message.reply_text("Processing...")
@@ -64,6 +75,7 @@ async def link_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             'file_size': file_size,
             'file_type': mime_type,
             'category': category,
+            'text_content': text_content,
             'user_id': user_id,
             'auto_delete_time': AUTO_DELETE_TIME,
         })

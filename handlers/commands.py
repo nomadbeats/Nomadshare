@@ -31,23 +31,31 @@ async def _deliver_file(update: Update, context: ContextTypes.DEFAULT_TYPE, shor
         return
 
     chat_id = update.effective_chat.id
-    telegram_file_id = file_data['file_id']
     category = file_data.get('category', 'document')
-    caption = esc(file_data.get('file_name', ''))
 
     try:
-        if category == 'photo':
-            await context.bot.send_photo(chat_id, telegram_file_id, caption=caption)
-        elif category == 'video':
-            await context.bot.send_video(chat_id, telegram_file_id, caption=caption)
-        elif category == 'audio':
-            await context.bot.send_audio(chat_id, telegram_file_id, caption=caption)
+        if category == 'text':
+            # No Telegram file_id for saved text — send the stored content
+            # verbatim, not parsed as HTML (arbitrary text could contain
+            # "<3" or similar that Telegram's HTML parser would choke on).
+            await context.bot.send_message(
+                chat_id, file_data.get('text_content') or "", parse_mode=None
+            )
         else:
-            await context.bot.send_document(chat_id, telegram_file_id, caption=caption)
+            telegram_file_id = file_data['file_id']
+            caption = esc(file_data.get('file_name', ''))
+            if category == 'photo':
+                await context.bot.send_photo(chat_id, telegram_file_id, caption=caption)
+            elif category == 'video':
+                await context.bot.send_video(chat_id, telegram_file_id, caption=caption)
+            elif category == 'audio':
+                await context.bot.send_audio(chat_id, telegram_file_id, caption=caption)
+            else:
+                await context.bot.send_document(chat_id, telegram_file_id, caption=caption)
         await increment_access_count(file_data['id'])
     except Exception as e:
         await report_error(context, update, e, where="deliver_file")
-        await update.message.reply_text("Couldn't deliver that file. It may have been removed on Telegram's end.")
+        await update.message.reply_text("Couldn't deliver that content. It may have been removed on Telegram's end.")
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):

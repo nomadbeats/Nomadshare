@@ -16,9 +16,10 @@ def _calculate_expiry(auto_delete_seconds):
 
 async def save_file(file_data: dict) -> dict:
     """
-    file_data expects: file_id (telegram), file_name, file_size, file_type (mime),
-    category ('document'|'photo'|'video'|'audio' - which bot.send_* to use on
-    delivery), user_id, auto_delete_time (seconds, optional).
+    file_data expects: file_id (telegram, None for text saves), file_name,
+    file_size, file_type (mime), category ('document'|'photo'|'video'|'audio'|'text'
+    - which bot.send_* to use on delivery), text_content (only for category='text'),
+    user_id, auto_delete_time (seconds, optional).
     """
     try:
         record_id = str(uuid.uuid4())
@@ -29,6 +30,7 @@ async def save_file(file_data: dict) -> dict:
             'file_size': file_data.get('file_size'),
             'file_type': file_data.get('file_type'),
             'category': file_data.get('category', 'document'),
+            'text_content': file_data.get('text_content'),
             'uploaded_by': file_data.get('user_id'),
             'upload_date': datetime.now().isoformat(),
             'expiry_date': _calculate_expiry(file_data.get('auto_delete_time')),
