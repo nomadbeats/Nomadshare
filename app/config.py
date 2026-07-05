@@ -43,7 +43,7 @@ WEBSITE_URL = environ.get("WEBSITE_URL", "")
 
 # ============ Community / Updates Channels ============
 COMMUNITY_CHANNEL = environ.get("COMMUNITY_CHANNEL", "nomadry")
-UPDATES_CHANNEL = environ.get("UPDATES_CHANNEL", "nomadrybots")
+UPDATES_CHANNEL = environ.get("UPDATES_CHANNEL", "nomadbots")
 
 # ============ NomadShare Bot Info ============
 BOT_NAME = "NomadShare"
