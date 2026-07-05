@@ -1,5 +1,15 @@
 # NomadShare - Display Formatters
 
+import html as _html
+
+
+def esc(value) -> str:
+    """HTML-escape a value before dropping it into a parse_mode=HTML message.
+    File names, usernames, and URLs are all user/Telegram-controlled and could
+    contain <, >, or & — unescaped, that breaks Telegram's HTML parser."""
+    return _html.escape(str(value)) if value is not None else ""
+
+
 class FileFormatter:
     @staticmethod
     def format_size(bytes_size: int) -> str:
@@ -13,19 +23,19 @@ class FileFormatter:
     @staticmethod
     def get_file_type(mime_type: str) -> str:
         type_map = {
-            'image': '🖼️ Image',
-            'video': '🎥 Video',
-            'audio': '🎵 Audio',
-            'application/pdf': '📕 PDF',
-            'application/zip': '📦 Archive',
-            'document': '📄 Document',
-            'text': '📝 Text',
+            'image': 'Image',
+            'video': 'Video',
+            'audio': 'Audio',
+            'application/pdf': 'PDF',
+            'application/zip': 'Archive',
+            'document': 'Document',
+            'text': 'Text',
         }
         mime_type = mime_type or ""
         for key, value in type_map.items():
             if key in mime_type.lower():
                 return value
-        return '📁 File'
+        return 'File'
 
 
 class TimeFormatter:

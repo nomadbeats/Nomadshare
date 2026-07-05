@@ -49,7 +49,6 @@ async def can_use_upload_features(user_id: int) -> bool:
 
 
 PRIVATE_MODE_TEXT = (
-    "🔒 **This bot is currently in Private Mode.**\n\n"
-    "Only the admin can save files and generate links right now.\n"
-    "You can still open any file link the admin shares with you."
+    "This bot is in private mode right now — only the admin can save files "
+    "and generate links. You can still open any link the admin shares with you."
 )

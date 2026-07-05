@@ -41,6 +41,10 @@ SHORTLINK_API = environ.get("SHORTLINK_API", "")
 # e.g. https://your-project.vercel.app
 WEBSITE_URL = environ.get("WEBSITE_URL", "")
 
+# ============ Community / Updates Channels ============
+COMMUNITY_CHANNEL = environ.get("COMMUNITY_CHANNEL", "nomadry")
+UPDATES_CHANNEL = environ.get("UPDATES_CHANNEL", "nomadrybots")
+
 # ============ NomadShare Bot Info ============
 BOT_NAME = "NomadShare"
 BOT_VERSION = "2.0.0"
